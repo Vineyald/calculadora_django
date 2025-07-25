@@ -1,0 +1,203 @@
+{% load tz %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora Avançada</title>
+  <!-- Tailwind CSS para estilização -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen flex items-center justify-center text-white font-sans">
+
+  <!-- Barra superior com usuário logado e botão de logout -->
+  <div class="fixed top-0 right-0 p-4 flex items-center gap-4 z-50">
+    <span class="font-semibold text-white bg-black/30 px-4 py-2 rounded-lg shadow">
+      {{ request.user.name|default:request.user.name }}
+    </span>
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2">
+        <!-- Ícone de logout -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"/>
+        </svg>
+        Sair
+      </button>
+    </form>
+  </div>
+
+  <div class="w-full max-w-6xl p-4">
+    <h1 class="text-4xl font-bold text-center mb-2">Calculadora Avançada</h1>
+    <p class="text-center text-gray-300 mb-8">Calculadora com histórico de operações</p>
+
+    <div class="flex flex-col md:flex-row gap-6">
+      
+      <!-- Painel da Calculadora -->
+      <div class="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg flex-1">
+        <form method="post" class="space-y-4" onsubmit="enviarExpressao(event)">
+          {% csrf_token %}
+          <!-- Display da calculadora -->
+          <input type="text" name="expressao" id="display" value="{% if expressao %}{{ expressao }}{% elif resultado %}{{ resultado }}{% else %}{{0}}{% endif %}" readonly 
+                 class="w-full text-right bg-black text-white p-4 rounded-lg text-2xl font-mono" />
+          <input type="hidden" name="expressao" id="expressaoOculta">
+
+          <!-- Teclado da calculadora -->
+          <div class="grid grid-cols-4 gap-2 text-lg font-semibold">
+            <button type="button" onclick="clearDisplay()" class="bg-red-600 hover:bg-red-700 rounded p-3 col-span-4">C</button>
+            <button type="button" onclick="eraseLastChar()" class="bg-gray-900 hover:bg-red-700 rounded p-3">⌫</button>
+            <button type="button" onclick="addChar('+/-')" class="bg-gray-700 hover:bg-gray-600 rounded p-3">±</button>
+            <button type="button" onclick="addChar('%')" class="bg-gray-700 hover:bg-gray-600 rounded p-3">%</button>
+            <button type="button" onclick="addChar('/')" class="bg-purple-500 hover:bg-purple-600 rounded p-3">÷</button>
+
+            <button type="button" onclick="addChar('7')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">7</button>
+            <button type="button" onclick="addChar('8')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">8</button>
+            <button type="button" onclick="addChar('9')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">9</button>
+            <button type="button" onclick="addChar('*')" class="bg-purple-500 hover:bg-purple-600 rounded p-3">×</button>
+
+            <button type="button" onclick="addChar('4')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">4</button>
+            <button type="button" onclick="addChar('5')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">5</button>
+            <button type="button" onclick="addChar('6')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">6</button>
+            <button type="button" onclick="addChar('-')" class="bg-purple-500 hover:bg-purple-600 rounded p-3">−</button>
+
+            <button type="button" onclick="addChar('1')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">1</button>
+            <button type="button" onclick="addChar('2')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">2</button>
+            <button type="button" onclick="addChar('3')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">3</button>
+            <button type="button" onclick="addChar('+')" class="bg-purple-500 hover:bg-purple-600 rounded p-3">+</button>
+
+            <button type="button" onclick="addChar('0')" class="col-span-2 bg-gray-800 hover:bg-gray-700 rounded p-3">0</button>
+            <button type="button" onclick="addChar('.')" class="bg-gray-800 hover:bg-gray-700 rounded p-3">.</button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 rounded p-3">=</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Painel do Histórico -->
+      <div class="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg w-full md:w-1/3">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <!-- Ícone de histórico -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 9h10m-7 4h7m-5 4h5"/></svg>
+            Histórico
+          </h2>
+          <!-- Botão para limpar histórico -->
+          <form action="{% url 'limpar_historico' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" title="Limpar histórico" class="text-red-500 hover:text-red-700 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a2 2 0 012-2h4a2 2 0 012 2v3"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+        {% if mensagem %}
+          <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+            <p class="font-bold">{{ mensagem }}</p>
+          </div>
+        {% endif %}
+        <!-- Lista de operações do histórico -->
+        <ul class="space-y-3 overflow-y-auto max-h-[calc(100vh-14rem)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-300" style="max-height: calc(5.5 * 4.5rem);">
+          {% for operacao in historico %}
+            <li class="bg-white/10 p-3 rounded-md">
+              <p class="text-sm">{{ operacao.numero1 }} {{ operacao.operacao }} {{ operacao.numero2 }}</p>
+              <p class="text-lg font-bold">= {{ operacao.resultado }}</p>
+              <p class="text-xs text-gray-400">{{ operacao.criado_em|localtime|date:"d/m/Y H:i" }}</p>
+            </li>
+          {% empty %}
+            <li>Nenhum cálculo ainda.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Referências dos campos do display e do input oculto
+    const display = document.getElementById("display");
+    const hiddenInput = document.getElementById("expressaoOculta");
+
+    /**
+     * Adiciona um caractere ao display da calculadora.
+     * Se for o botão de inverter sinal, chama a função específica.
+     */
+    function addChar(char) {
+      if (char === "+/-") {
+        inverterSinal();
+        return;
+      }
+      if (display.value === "0") {
+        display.value = char;
+      } else {
+        display.value += char;
+      }
+      hiddenInput.value = display.value;
+    }
+
+    /**
+     * Inverte o sinal do último número digitado na expressão.
+     * Alterna entre positivo e negativo, usando parênteses quando necessário.
+     */
+    function inverterSinal() {
+      let expr = display.value;
+      // Regex para encontrar o último número (com ou sem parênteses, positivo ou negativo)
+      let regex = /([+\-*/]\s*)?(\(?-?\d*\.?\d+\)?)(?!.*[+\-*/])/;
+      let match = expr.match(regex);
+
+      if (match) {
+        let operador = match[1] || "";
+        let numero = match[2];
+        let inicio = expr.lastIndexOf(numero);
+        let antes = expr.slice(0, inicio);
+        let invertido = "";
+
+        // Remove parênteses para facilitar a inversão
+        let limpo = numero.replace(/[()]/g, "");
+
+        // Se já está negativo e entre parênteses, tira o sinal e os parênteses
+        if ((numero.startsWith("(-") && numero.endsWith(")")) || (numero.startsWith("(") && numero.endsWith(")") && limpo.startsWith("-"))) {
+          invertido = limpo.slice(1); // remove o "-"
+        }
+        // Se já está negativo sem parênteses, tira o sinal
+        else if (limpo.startsWith("-")) {
+          invertido = limpo.slice(1);
+        }
+        // Se está positivo, coloca negativo e parênteses se não for o primeiro número
+        else {
+          invertido = "-" + limpo;
+          if (antes.trim() !== "") {
+            invertido = "(" + invertido + ")";
+          }
+        }
+
+        display.value = antes + invertido;
+        hiddenInput.value = display.value;
+      }
+    }
+
+    /**
+     * Limpa o display da calculadora.
+     */
+    function clearDisplay() {
+      display.value = "0";
+      hiddenInput.value = "";
+    }
+
+    /**
+     * Apaga o último caractere do display.
+     */
+    function eraseLastChar() {
+      display.value = display.value.slice(0, -1);
+      hiddenInput.value = display.value;
+    }
+
+    /**
+     * Envia a expressão para o backend ao submeter o formulário.
+     */
+    function enviarExpressao(e) {
+      e.preventDefault();
+      hiddenInput.value = display.value;
+      e.target.submit();
+    }
+  </script>
+
+</body>
+</html>

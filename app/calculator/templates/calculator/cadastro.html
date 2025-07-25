@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro - Calculadora Avançada</title>
+  <!-- Importa o Tailwind CSS para estilização moderna -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen flex items-center justify-center text-white font-sans">
+
+  <!-- Container centralizado do formulário de cadastro -->
+  <div class="w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg">
+    <!-- Título da página -->
+    <h1 class="text-3xl font-bold text-center mb-2">Criar Conta</h1>
+    <!-- Subtítulo -->
+    <p class="text-center text-gray-300 mb-6">Preencha os dados para se cadastrar</p>
+    
+    <!-- Formulário de cadastro -->
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <!-- Label do campo -->
+          <label for="{{ field.id_for_label }}" class="block mb-1 text-sm font-medium text-gray-200">
+            {{ field.label }}
+          </label>
+          <!-- Campo de entrada customizado para texto, email e senha -->
+          {% if field.field.widget.input_type == "password" %}
+            <input type="password" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+              class="w-full rounded-lg bg-gray-900 border border-gray-700 text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              {% if field.value %} value="{{ field.value }}"{% endif %} required>
+          {% elif field.field.widget.input_type == "text" or field.field.widget.input_type == "email" %}
+            <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+              class="w-full rounded-lg bg-gray-900 border border-gray-700 text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              {% if field.value %} value="{{ field.value }}"{% endif %} required>
+          {% else %}
+            {{ field }}
+          {% endif %}
+          <!-- Exibição dos erros do campo, um por linha -->
+          {% if field.errors %}
+            <div class="text-red-400 text-xs mt-1 space-y-1 flex flex-col">
+              {% for error in field.errors %}
+                <span>{{ error|striptags }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <!-- Botão de envio -->
+      <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded transition">Cadastrar</button>
+    </form>
+
+    <!-- Mensagem de erro geral do formulário -->
+    {% if form.errors %}
+      <div class="mb-4 text-red-400 text-center text-sm">
+        Corrija os campos destacados acima.
+      </div>
+    {% endif %}
+
+    <!-- Link para login caso já tenha conta -->
+    <div class="mt-6 text-center">
+      <span class="text-gray-300">Já tem uma conta?</span>
+      <a href="{% url 'login' %}" class="text-blue-400 hover:underline font-semibold">Entrar</a>
+    </div>
+  </div>
+</body>
+</html>
