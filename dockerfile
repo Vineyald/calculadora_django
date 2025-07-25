@@ -1,15 +1,17 @@
-# Imagem base
+# Dockerfile
 FROM python:3.11-slim
 
-# Diretório de trabalho
 WORKDIR /app
-
-# Instala dependências
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copia todo o código
 COPY . .
 
-# Comando padrão
-CMD ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Coleta arquivos estáticos (se necessário)
+RUN python manage.py collectstatic --noinput
+
+# Executa migrações
+RUN python manage.py migrate
+
+# Comando para iniciar o servidor
+CMD ["gunicorn", "seuprojeto.wsgi:application", "--bind", "0.0.0.0:8000"]
