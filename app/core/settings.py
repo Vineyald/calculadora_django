@@ -124,3 +124,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import os
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'chave-padrao-insegura')
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'

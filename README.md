@@ -17,6 +17,7 @@ Projeto de desafio técnico: uma calculadora web com autenticação de usuários
 - [Decisões Técnicas](#-decisões-técnicas)  
 - [Observações](#-observações)  
 - [Licença](#-licença)
+- [Deploy](#-deploy)
 
 ---
 
@@ -196,3 +197,9 @@ app/
 ## 📄 Licença
 
 Este projeto está sob a licença MIT.
+
+## 🌍 Deploy
+
+A aplicação está disponível em produção no Render:
+
+🔗 https://calculadora-django.onrender.com

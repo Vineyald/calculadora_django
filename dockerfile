@@ -1,17 +1,18 @@
-# Dockerfile
 FROM python:3.11-slim
 
+# Define o diretório base da aplicação
 WORKDIR /app
+
+# Copia todos os arquivos para dentro do container
 COPY . .
 
+# Instala dependências
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
-
-# Coleta arquivos estáticos (se necessário)
-RUN python manage.py collectstatic --noinput
+    pip install -r requirements.txt && \
+    pip install gunicorn
 
 # Executa migrações
-RUN python manage.py migrate
+RUN python app/manage.py migrate
 
-# Comando para iniciar o servidor
-CMD ["gunicorn", "seuprojeto.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Comando para rodar o Gunicorn
+CMD ["gunicorn", "core.wsgi:application", "--chdir", "app", "--bind", "0.0.0.0:8000"]
